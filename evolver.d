@@ -97,13 +97,6 @@ class Evolver {
         foreach (Circuit c; population) {
             int fitness = calculateFitness(c);
             c.reset();
-            /* if (fitness == 100) { */
-            /*     writeln(); */
-            /*     writeln("-----------------------"); */
-            /*     writeln(); */
-            /*     calculateFitness(c, true); */
-            /*     c.reset(); */
-            /* } */
             fitnesses ~= fitness;
         }
 
@@ -122,8 +115,6 @@ class Evolver {
                 newPopulation ~= population[i].dup();
                 randomMutation(population[i]);
                 newPopulation ~= population[i].dup();
-            } else {
-                /* writeln("Killed ", population[i].fitness, " ", medianFitness); */
             }
         }
         bestCircuit = population[bestFitnessIndex];
@@ -135,7 +126,6 @@ class Evolver {
             writeln(generations, ": ", medianFitness, " ", bestCircuit.fitness);
         }
         population = newPopulation.dup();
-        /* writeln(population.length); */
 
         generations++;
     }
@@ -164,7 +154,7 @@ class Evolver {
                 else { fitness -= 0; }
 
                 if (debugPrint) {
-                    writef("%2d: ", i*j);
+                    writef("%2d: ", i * 10 + j);
                     foreach (Gate g; c.inputGates) {
                         write(g.output, " ");
                     }
@@ -182,6 +172,11 @@ class Evolver {
             }
         }
         c.fitness = fitness;
+        if (debugPrint) {
+            writeln(c.toStr());
+            writeln(c.outputNums);
+            writeln(fitness);
+        }
 
         return fitness;
     }
@@ -189,8 +184,8 @@ class Evolver {
 
 void main() {
     Evolver e = new Evolver();
-    e.inputs = [[0, 0], [0, 1], [1, 1], [0, 1], [0, 0]];
-    e.correctOutputs = [[0], [0], [1], [1], [0]];
+    e.inputs = [[0, 0], [0, 1], [1, 0], [1, 1], [0, 1], [1, 0], [0, 0], [1, 1], [1, 0]];
+    e.correctOutputs = [[0], [0], [0], [1], [1], [1], [0], [1], [1]];
 
     Circuit c = new Circuit("14:-1 1-1:-2 1-2:4 11:2:3", 2);
     c.addOutput(4);
@@ -205,21 +200,4 @@ void main() {
         e.advanceGen(i % 100 == 0);
         i++;
     }
-
-    /* Circuit c = new Circuit("14:2:3 1-1:-2 12:4:-2:3:1 11:-1", 2); */
-    /* writeln(c.toStr()); */
-    /* c.addOutput(1); */
-    /* writeln(e.calculateFitness(c, true)); */
-    /* c.writeSV("Cmod"); */
-
-    /* Circuit c = randomCircuit(4, 5, 2, 1); */
-    /* writeln(e.calculateFitness(c)); */
-    /* c.reset(); */
-    /*  */
-    /* Circuit c1 = c.dup(); */
-    /* writeln(e.calculateFitness(c1)); */
-    /* c1.reset(); */
-    /* randomMutation(c); */
-    /* writeln(e.calculateFitness(c1)); */
-    /* writeln(e.calculateFitness(c.dup())); */
 }
