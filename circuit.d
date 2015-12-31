@@ -104,6 +104,7 @@ class Circuit {
     void writeSV(string circuitName) {
         string output = "";
         output ~= "module " ~ circuitName ~ "(\n";
+        output ~= "Fitness: " ~ to!string(fitness);
 
         string outputGatesStr = "";
         for (int i = 1; i <= outputNums.length; i++) {
