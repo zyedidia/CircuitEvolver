@@ -1,3 +1,5 @@
+.PHONY: evolver simulator verilog clean
+
 evolver:
 	dmd -O evolver.d simulator.d circuit.d gate.d
 

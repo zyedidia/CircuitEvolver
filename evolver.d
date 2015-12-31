@@ -2,6 +2,7 @@ import std.stdio;
 import std.random;
 import std.conv;
 import std.algorithm;
+import std.string;
 
 import gate;
 import circuit;
@@ -124,6 +125,7 @@ class Evolver {
                 writeln(bestCircuit.outputNums);
             }
             writeln(generations, ": ", medianFitness, " ", bestCircuit.fitness);
+            bestCircuit.writeSV("Cmod");
         }
         population = newPopulation.dup();
 
@@ -182,14 +184,34 @@ class Evolver {
     }
 }
 
-void main() {
+void main(string[] args) {
     Evolver e = new Evolver();
-    e.inputs = [[0, 0], [0, 1], [1, 0], [1, 1], [0, 1], [1, 0], [0, 0], [1, 1], [1, 0]];
-    e.correctOutputs = [[0], [0], [0], [1], [1], [1], [0], [1], [1]];
 
-    Circuit c = new Circuit("14:-1 1-1:-2 1-2:4 11:2:3", 2);
-    c.addOutput(4);
-    writeln("FITNESS ", e.calculateFitness(c));
+    File file = File(args[1], "r");
+
+    byte[][][] inputs = [[]];
+    byte[][][] outputs = [[]];
+
+    int environments = 0;
+    while (!file.eof()) {
+        string line = strip(file.readln());
+        if (line != "") {
+            if (line == "---") {
+                environments++;
+            }
+
+            string[] lineSplit = line.split(" -> ");
+            inputs[environments] ~= lineSplit[0].split(" ").map!(to!byte).array;
+            outputs[environments] ~= lineSplit[1].split(" ").map!(to!byte).array;
+        }
+    }
+
+    /* e.inputs = [[0, 0], [0, 1], [1, 0], [1, 1], [0, 1], [1, 0], [0, 0], [1, 1], [1, 0]]; */
+    /* e.correctOutputs = [[0], [0], [0], [1], [1], [1], [0], [1], [1]]; */
+
+    /* Circuit c = new Circuit("14:-1 1-1:-2 1-2:4 11:2:3", 2); */
+    /* c.addOutput(4); */
+    /* writeln("FITNESS ", e.calculateFitness(c)); */
 
     for (int i = 0; i < e.popSize; i++) {
         e.population ~= randomCircuit(4, 5, 2, 1);
@@ -197,6 +219,12 @@ void main() {
 
     int i = 0;
     while (true) {
+        if (i % 100 == 0) {
+            writeln("Changing inputs to ", inputs[(i/100) % inputs.length]);
+            writeln("Changing outputs to ", outputs[(i/100) % outputs.length]);
+            e.inputs = inputs[(i/100) % inputs.length];
+            e.correctOutputs = outputs[(i/100) % outputs.length];
+        }
         e.advanceGen(i % 100 == 0);
         i++;
     }
