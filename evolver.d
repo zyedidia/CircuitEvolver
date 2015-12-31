@@ -76,7 +76,22 @@ void randomMutation(Circuit c) {
         }
 
         Gate g = c.gates[uniform(0, c.gates.length)];
-        g.inputNums = chooseRandom(possibleInputGateNums);
+        bool largeMutation = uniform(0.0f, 1.0f) >= 0.0;
+        if (largeMutation) {
+            g.inputNums = chooseRandom(possibleInputGateNums);
+        } else {
+            /* float mutationChoice = uniform(0.0f, 1.0f); */
+            /* if (mutationChoice < 0.33f && g.inputGates.length > 1) { */
+            /*     // Delete an input */
+            /*     g.inputNums = g.inputNums.remove(uniform(0, g.inputGates.length)); */
+            /* } else if (mutationChoice < 0.66f && g.inputGates.length < (c.inputGates.length + c.gates.length)) { */
+            /*     // Add an input */
+            /*     g.inputNums ~= possibleInputGateNums[uniform(0, possibleInputGateNums.length)]; */
+            /* } else { */
+            /*     // Change an input */
+            /*     g.inputNums[uniform(0, g.inputNums.length)] = possibleInputGateNums[uniform(0, possibleInputGateNums.length)]; */
+            /* } */
+        }
         g.linkInputGates(c.inputGates, c.gates);
     }
 }
@@ -89,17 +104,15 @@ class Evolver {
 
     int generations = 0;
 
-    int popSize = 500;
+    int popSize = 1000;
 
     Circuit bestCircuit;
 
     void advanceGen(bool debugPrint = false) {
-        int[] fitnesses = [];
         foreach (Circuit c; population) {
-            int fitness = calculateFitness(c);
-            fitnesses ~= fitness;
+            calculateFitness(c);
+            c.reset();
         }
-        int medianFitness = sort(fitnesses)[fitnesses.length / 2];
 
         population = sort!("a.fitness > b.fitness")(population).array;
 
@@ -112,7 +125,7 @@ class Evolver {
             newPopulation ~= population[i].dup();
         }
         if (debugPrint) {
-            writeln(generations, ": ", medianFitness, " ", bestCircuit.fitness);
+            writeln(generations, ": ", bestCircuit.fitness);
             bestCircuit.writeSV("Cmod");
         }
         population = newPopulation.dup();
@@ -122,7 +135,6 @@ class Evolver {
 
     // Calculate the fitness for a given circuit
     int calculateFitness(Circuit c, bool debugPrint = false) {
-        c.reset();
         int fitness = 0;
 
         foreach (Gate g; c.gates) {
@@ -170,7 +182,6 @@ class Evolver {
             writeln(c.outputNums);
             writeln(fitness);
         }
-        c.reset();
 
         return fitness;
     }
@@ -200,7 +211,6 @@ void main(string[] args) {
         }
     }
 
-
     Circuit c = new Circuit("14:-1 1-1:-2 1-2:4 11:2:3", 2);
     c.addOutput(4);
     e.inputs = inputs[0];
@@ -213,9 +223,14 @@ void main(string[] args) {
 
     int i = 0;
     while (true) {
-        if (i % 2 == 0) {
-            /* e.inputs = inputs[(i/2) % inputs.length]; */
-            /* e.correctOutputs = outputs[(i/2) % outputs.length]; */
+        if (i % 50 == 0) {
+            /* c.reset(); */
+            /* for (int j = cast(int) e.population.length / 2; j < e.population.length; j++) { */
+            /*     e.population[j] = randomCircuit(4, 5, 2, 1); */
+            /* } */
+            /* e.inputs = inputs[(i/50) % inputs.length]; */
+            /* e.correctOutputs = outputs[(i/50) % outputs.length]; */
+            /* writeln("TARGET FITNESS ", e.calculateFitness(c)); */
         }
         e.advanceGen(i % 10 == 0);
         if (i % 100 == 0) {

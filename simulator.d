@@ -8,16 +8,23 @@ enum NAND = 1;
 enum NOR = 0;
 
 byte nand(byte[] inputs) {
-    if (inputs.canFind(2) && !inputs.canFind(0)) {
-        return 2;
+    bool canFind0 = false;
+    bool canFind2 = false;
+    foreach (byte i; inputs) {
+        if (i == 2) {
+            canFind2 = true;
+        } else if (i == 0) {
+            canFind0 = true;
+        }
     }
-    byte result = inputs[0];
-
-    foreach (byte input; inputs) {
-        result = result && input;
+    if (!canFind0) {
+        if (canFind2) {
+            return 2;
+        }
+        return 0;
+    } else {
+        return 1;
     }
-
-    return !result;
 }
 
 byte nor(byte[] inputs) {

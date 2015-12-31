@@ -13,13 +13,13 @@ class Gate {
     byte output = 2;
     byte newOutput = 2;
 
-    void linkInputGates(Gate[] inputGates, Gate[] gates) {
+    void linkInputGates(Gate[] circuitInputGates, Gate[] circuitGates) {
         this.inputGates = [];
         foreach (int inputNum; inputNums) {
             if (inputNum < 0) {
-                addInput(inputGates[abs(inputNum)-1]);
+                addInput(circuitInputGates[abs(inputNum)-1]);
             } else {
-                addInput(gates[inputNum - 1]);
+                addInput(circuitGates[inputNum - 1]);
             }
         }
     }
