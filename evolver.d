@@ -106,17 +106,14 @@ class Evolver {
         Circuit[] newPopulation;
 
         bestCircuit = population[0].dup();
-        for (int i = 0; i < population.length; i++) {
-            if (population[i].fitness >= medianFitness && newPopulation.length < popSize) {
-                newPopulation ~= population[i].dup();
-                randomMutation(population[i]);
-                newPopulation ~= population[i].dup();
-            }
+        for (int i = 0; i < population.length / 2; i++) {
+            newPopulation ~= population[i].dup();
+            randomMutation(population[i]);
+            newPopulation ~= population[i].dup();
         }
         if (debugPrint) {
             writeln(generations, ": ", medianFitness, " ", bestCircuit.fitness);
             bestCircuit.writeSV("Cmod");
-            writeln(bestCircuit.toStr(), " ", bestCircuit.outputNums, " ", bestCircuit.fitness);
         }
         population = newPopulation.dup();
 
@@ -146,8 +143,8 @@ class Evolver {
                         pass = false;
                     }
                 }
-                if (pass) { fitness += 4; }
-                else { fitness -= 4; }
+                if (pass) { fitness += 1; }
+                else { fitness -= 0; }
 
                 if (debugPrint) {
                     writef("%2d: ", i * 10 + j);
@@ -208,7 +205,7 @@ void main(string[] args) {
     c.addOutput(4);
     e.inputs = inputs[0];
     e.correctOutputs = outputs[0];
-    e.calculateFitness(c, true);
+    writeln("TARGET FITNESS ", e.calculateFitness(c));
 
     for (int i = 0; i < e.popSize; i++) {
         e.population ~= randomCircuit(4, 5, 2, 1);
