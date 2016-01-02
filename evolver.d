@@ -60,11 +60,11 @@ Circuit randomCircuit(int minGates, int maxGates, int numInputs, int numOutputs)
     return c;
 }
 
-void randomMutation(Circuit c) {
+void randomMutation(Circuit c, int minGates, int maxGates) {
     bool changeOutput = uniform(0.0f, 1.0f) > 0.75;
     if (changeOutput) {
         for (int i = 0; i < c.outputNums.length; i++) {
-            c.setOutput(i, uniform(1, cast(int) c.gates.length + 1));
+            c.setOutput(i, cast(int) uniform(1, c.gates.length + 1));
         }
     } else {
         int[] possibleInputGateNums;
@@ -75,24 +75,58 @@ void randomMutation(Circuit c) {
             possibleInputGateNums ~= g.num;
         }
 
-        Gate g = c.gates[uniform(0, c.gates.length)];
-        bool largeMutation = uniform(0.0f, 1.0f) >= 0.0;
-        if (largeMutation) {
+        float mutationChoice = uniform(0.0f, 1.0f);
+        if (mutationChoice < 0.33f && c.gates.length > minGates) {
+            // Delete a gate
+            Gate destroy = c.gates[uniform(0, c.gates.length)];
+            c.gates = c.gates.remove(destroy.num - 1);
+            for (int i = 0; i < c.gates.length; i++) {
+                Gate g = c.gates[i];
+                g.num = i + 1;
+                int index = -1;
+                for (int j = 0; j < g.inputNums.length; j++) {
+                    int n = g.inputNums[j];
+                    if (n > destroy.num) {
+                        g.inputNums[j] = n - 1;
+                    } else if (n == destroy.num) {
+                        index = j;
+                    }
+                }
+                if (index != -1) {
+                    g.inputNums = g.inputNums.remove(index);
+                }
+                g.linkInputGates(c.inputGates, c.gates);
+            }
+            int index = -1;
+            for (int i = 0; i < c.outputNums.length; i++) {
+                if (c.outputNums[i] > destroy.num) {
+                    c.outputNums[i]--;
+                } else if (c.outputNums[i] == destroy.num) {
+                    index = i;
+                }
+            }
+            if (index != -1) {
+                c.setOutput(index, cast(int) uniform(1, c.gates.length + 1));
+            }
+        } else if (mutationChoice < 0.66f && c.gates.length < maxGates) {
+            // Add a gate
+            Gate g = new Gate();
             g.inputNums = chooseRandom(possibleInputGateNums);
+            g.linkInputGates(c.inputGates, c.gates);
+            c.gates ~= g;
+            g.num = cast(int) c.gates.countUntil(g);
         } else {
-            /* float mutationChoice = uniform(0.0f, 1.0f); */
-            /* if (mutationChoice < 0.33f && g.inputGates.length > 1) { */
-            /*     // Delete an input */
-            /*     g.inputNums = g.inputNums.remove(uniform(0, g.inputGates.length)); */
-            /* } else if (mutationChoice < 0.66f && g.inputGates.length < (c.inputGates.length + c.gates.length)) { */
-            /*     // Add an input */
-            /*     g.inputNums ~= possibleInputGateNums[uniform(0, possibleInputGateNums.length)]; */
-            /* } else { */
-            /*     // Change an input */
-            /*     g.inputNums[uniform(0, g.inputNums.length)] = possibleInputGateNums[uniform(0, possibleInputGateNums.length)]; */
-            /* } */
+            // Change a gate's inputs
+            Gate g = c.gates[uniform(0, c.gates.length)];
+            g.inputNums = chooseRandom(possibleInputGateNums);
+            g.linkInputGates(c.inputGates, c.gates);
         }
-        g.linkInputGates(c.inputGates, c.gates);
+
+        /* Gate g = c.gates[uniform(0, c.gates.length)]; */
+        /* bool largeMutation = uniform(0.0f, 1.0f) >= 0.0; */
+        /* if (largeMutation) { */
+        /* } else { */
+        /* } */
     }
 }
 
@@ -101,12 +135,21 @@ class Evolver {
     byte[][] correctOutputs;
 
     Circuit[] population;
+    Circuit bestCircuit;
 
     int generations = 0;
-
     int popSize = 1000;
 
-    Circuit bestCircuit;
+    int minGates;
+    int maxGates;
+
+    void createPopulation(int minGates, int maxGates, int numInputs, int numOutputs) {
+        this.minGates = minGates;
+        this.maxGates = maxGates;
+        for (int i = 0; i < popSize; i++) {
+            population ~= randomCircuit(minGates, maxGates+1, numInputs, numOutputs);
+        }
+    }
 
     void advanceGen(bool debugPrint = false) {
         foreach (Circuit c; population) {
@@ -121,7 +164,7 @@ class Evolver {
         bestCircuit = population[0].dup();
         for (int i = 0; i < population.length / 2; i++) {
             newPopulation ~= population[i].dup();
-            randomMutation(population[i]);
+            randomMutation(population[i], minGates, maxGates);
             newPopulation ~= population[i].dup();
         }
         if (debugPrint) {
@@ -189,6 +232,7 @@ class Evolver {
 
 void main(string[] args) {
     Evolver e = new Evolver();
+    e.createPopulation(4, 4, 2, 1);
 
     File file = File(args[1], "r");
 
@@ -217,25 +261,11 @@ void main(string[] args) {
     e.correctOutputs = outputs[0];
     writeln("TARGET FITNESS ", e.calculateFitness(c));
 
-    for (int i = 0; i < e.popSize; i++) {
-        e.population ~= randomCircuit(4, 5, 2, 1);
-    }
 
     int i = 0;
     while (true) {
-        if (i % 50 == 0) {
-            /* c.reset(); */
-            /* for (int j = cast(int) e.population.length / 2; j < e.population.length; j++) { */
-            /*     e.population[j] = randomCircuit(4, 5, 2, 1); */
-            /* } */
-            /* e.inputs = inputs[(i/50) % inputs.length]; */
-            /* e.correctOutputs = outputs[(i/50) % outputs.length]; */
-            /* writeln("TARGET FITNESS ", e.calculateFitness(c)); */
-        }
-        e.advanceGen(i % 10 == 0);
-        if (i % 100 == 0) {
-            e.bestCircuit.writeSV("Cmod");
-        }
+        e.advanceGen(true);
+        e.bestCircuit.writeSV("Cmod");
         i++;
     }
 }
